@@ -9,9 +9,8 @@ import 'login_screen.dart';
 
 class CustomerDashboard extends StatefulWidget {
   final bool isLoggedIn;
-  final String username; // NEW: Tracks who is buying!
+  final String username;
 
-  // Defaults to Zando_VIP so your presentation never crashes
   const CustomerDashboard({
     super.key,
     required this.isLoggedIn,
@@ -25,7 +24,7 @@ class CustomerDashboard extends StatefulWidget {
 class _CustomerDashboardState extends State<CustomerDashboard> {
   int _currentIndex = 0;
   List inventory = [];
-  List orderHistory = []; // NEW: Stores the user's past purchases
+  List orderHistory = [];
   bool isLoading = true;
   bool isOrdersLoading = false;
   bool isKhmer = false;
@@ -66,7 +65,6 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
     }
   }
 
-  // 🚀 NEW: Fetch Orders from the Cloud
   Future<void> fetchOrders() async {
     setState(() => isOrdersLoading = true);
     try {
@@ -80,6 +78,8 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
           orderHistory = json.decode(response.body);
           isOrdersLoading = false;
         });
+      } else {
+        if (mounted) setState(() => isOrdersLoading = false);
       }
     } catch (e) {
       if (mounted) setState(() => isOrdersLoading = false);
@@ -94,17 +94,17 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       builder: (context) => _BakongPaymentSheet(
         item: item,
         isKhmer: isKhmer,
-        onPaymentSuccess: () {
-          _processOrderToDatabase(item['sku'], item['name']);
+        onPaymentSuccess: (int selectedQuantity) {
+          _processOrderToDatabase(item['sku'], item['name'], selectedQuantity);
         },
       ),
     );
   }
 
-  // 🚀 CHANGED: Now saves a real order instead of just deducting stock!
   Future<void> _processOrderToDatabase(
     String skuCode,
     String productName,
+    int quantity,
   ) async {
     try {
       final response = await http.post(
@@ -112,22 +112,125 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
         headers: {'Content-Type': 'application/json'},
         body: json.encode({
           'sku_code': skuCode,
-          'quantity': 1,
+          'quantity': quantity,
           'customer_username': widget.username,
           'product_name': productName,
         }),
       );
 
       if (mounted && response.statusCode == 200) {
-        fetchInventory(); // Update store
-        fetchOrders(); // Update order history!
+        fetchInventory();
+        fetchOrders();
+      } else {
+        // If it fails, show an error so you know the cloud isn't ready
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('⚠️ Cloud Server is still updating...'),
+            backgroundColor: Colors.orange,
+          ),
+        );
       }
     } catch (e) {
       debugPrint("Order Error: $e");
     }
   }
 
-  // --- UI BUILDERS FOR TABS ---
+  // 🚀 NEW: Beautiful Digital Receipt Popup
+  void _showReceiptDialog(Map order) {
+    showDialog(
+      context: context,
+      builder: (context) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(16),
+          ),
+          child: Padding(
+            padding: const EdgeInsets.all(24.0),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.check_circle, color: Colors.green, size: 64),
+                const SizedBox(height: 16),
+                Text(
+                  tr('E-RECEIPT', 'វិក័យប័ត្រអេឡិចត្រូនិក'),
+                  style: const TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    letterSpacing: 1,
+                  ),
+                ),
+                const SizedBox(height: 16),
+                Divider(thickness: 2, color: Colors.grey.shade300),
+                const SizedBox(height: 16),
+                _receiptRow(
+                  tr('Item', 'ទំនិញ'),
+                  order['product_name'] ?? 'Item',
+                ),
+                const SizedBox(height: 12),
+                _receiptRow('SKU', order['sku_code'] ?? 'N/A'),
+                const SizedBox(height: 12),
+                _receiptRow(tr('Quantity', 'បរិមាណ'), '${order['quantity']}'),
+                const SizedBox(height: 12),
+                _receiptRow(tr('Date', 'កាលបរិច្ឆេទ'), order['order_date']),
+                const SizedBox(height: 16),
+                Divider(thickness: 2, color: Colors.grey.shade300),
+                const SizedBox(height: 16),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
+                      tr('Status', 'ស្ថានភាព'),
+                      style: const TextStyle(fontWeight: FontWeight.bold),
+                    ),
+                    const Text(
+                      'PAID (KHQR)',
+                      style: TextStyle(
+                        color: Colors.green,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 32),
+                SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.black,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                    ),
+                    child: Text(tr('Close', 'បិទ')),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _receiptRow(String title, String value) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Text(title, style: TextStyle(color: Colors.grey[600])),
+        const SizedBox(width: 16),
+        Expanded(
+          child: Text(
+            value,
+            textAlign: TextAlign.right,
+            style: const TextStyle(fontWeight: FontWeight.w600),
+          ),
+        ),
+      ],
+    );
+  }
 
   Widget _buildShopTab() {
     if (isLoading)
@@ -147,6 +250,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       itemBuilder: (context, index) {
         final item = inventory[index];
         final bool inStock = item['stock'] > 0;
+        final double price = item['price']?.toDouble() ?? 12.00;
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 300),
@@ -197,9 +301,24 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
                       overflow: TextOverflow.ellipsis,
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      'Size: ${item['size']}',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 13),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Text(
+                          'Size: ${item['size']}',
+                          style: TextStyle(
+                            color: Colors.grey[500],
+                            fontSize: 13,
+                          ),
+                        ),
+                        Text(
+                          '\$${price.toStringAsFixed(2)}',
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            color: Colors.black87,
+                          ),
+                        ),
+                      ],
                     ),
                     const SizedBox(height: 12),
                     Row(
@@ -252,20 +371,18 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
     );
   }
 
-  // 🚀 NEW: The Animated Orders UI
   Widget _buildOrdersTab() {
-    if (!widget.isLoggedIn) {
+    if (!widget.isLoggedIn)
       return Center(
         child: Text(
           tr('Please login to view orders.', 'សូមចូលគណនីដើម្បីមើលការបញ្ជាទិញ។'),
         ),
       );
-    }
-    if (isOrdersLoading) {
+    if (isOrdersLoading)
       return const Center(
         child: CircularProgressIndicator(color: Colors.black),
       );
-    }
+
     if (orderHistory.isEmpty) {
       return Center(
         child: Column(
@@ -305,37 +422,54 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(16),
           ),
-          child: ListTile(
-            contentPadding: const EdgeInsets.all(16),
-            leading: Container(
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.green.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(12),
-              ),
-              child: const Icon(Icons.receipt_long, color: Colors.green),
-            ),
-            title: Text(
-              order['product_name'] ?? 'Unknown Item',
-              style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
-            ),
-            subtitle: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const SizedBox(height: 8),
-                Text('SKU: ${order['sku_code']}  |  Qty: ${order['quantity']}'),
-                const SizedBox(height: 4),
-                Text(
-                  order['order_date'],
-                  style: TextStyle(color: Colors.grey[500], fontSize: 12),
+          child: InkWell(
+            borderRadius: BorderRadius.circular(16),
+            onTap: () =>
+                _showReceiptDialog(order), // 🚀 MAKES THE CARD CLICKABLE
+            child: ListTile(
+              contentPadding: const EdgeInsets.all(16),
+              leading: Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.green.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
                 ),
-              ],
-            ),
-            trailing: const Text(
-              "Paid",
-              style: TextStyle(
-                color: Colors.green,
-                fontWeight: FontWeight.bold,
+                child: const Icon(Icons.receipt_long, color: Colors.green),
+              ),
+              title: Text(
+                order['product_name'] ?? 'Unknown Item',
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  fontSize: 16,
+                ),
+              ),
+              subtitle: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const SizedBox(height: 8),
+                  Text(
+                    'SKU: ${order['sku_code']}  |  Qty: ${order['quantity']}',
+                  ),
+                  const SizedBox(height: 4),
+                  Text(
+                    order['order_date'],
+                    style: TextStyle(color: Colors.grey[500], fontSize: 12),
+                  ),
+                ],
+              ),
+              trailing: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Text(
+                    "Paid",
+                    style: TextStyle(
+                      color: Colors.green,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  Icon(Icons.open_in_new, size: 16, color: Colors.grey[400]),
+                ],
               ),
             ),
           ),
@@ -438,8 +572,7 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
         currentIndex: _currentIndex,
         onTap: (index) {
           setState(() => _currentIndex = index);
-          if (index == 1 && widget.isLoggedIn)
-            fetchOrders(); // Refresh orders when clicked
+          if (index == 1 && widget.isLoggedIn) fetchOrders();
         },
         selectedItemColor: Colors.black,
         unselectedItemColor: Colors.grey[400],
@@ -465,11 +598,11 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   }
 }
 
-// --- BAKONG SHEET REMAINS THE SAME ---
+// --- BAKONG SHEET REMAINS EXACTLY THE SAME ---
 class _BakongPaymentSheet extends StatefulWidget {
   final Map item;
   final bool isKhmer;
-  final VoidCallback onPaymentSuccess;
+  final Function(int) onPaymentSuccess;
 
   const _BakongPaymentSheet({
     required this.item,
@@ -483,18 +616,29 @@ class _BakongPaymentSheet extends StatefulWidget {
 
 class _BakongPaymentSheetState extends State<_BakongPaymentSheet> {
   int _paymentState = 0;
+  int _quantity = 1;
+  late int _maxStock;
+  late double _unitPrice;
+
+  @override
+  void initState() {
+    super.initState();
+    _maxStock = widget.item['stock'] ?? 1;
+    _unitPrice = widget.item['price']?.toDouble() ?? 12.00;
+  }
 
   void _simulateScan() async {
     setState(() => _paymentState = 1);
     await Future.delayed(const Duration(seconds: 2));
     setState(() => _paymentState = 2);
-    widget.onPaymentSuccess();
+    widget.onPaymentSuccess(_quantity);
     await Future.delayed(const Duration(seconds: 2));
     if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
+    double totalPrice = _unitPrice * _quantity;
     return Container(
       padding: const EdgeInsets.all(24),
       decoration: const BoxDecoration(
@@ -513,8 +657,64 @@ class _BakongPaymentSheetState extends State<_BakongPaymentSheet> {
             ),
           ),
           const SizedBox(height: 24),
-
           if (_paymentState == 0) ...[
+            Text(
+              widget.item['name'],
+              style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 8),
+            Text(
+              'Size: ${widget.item['size']}  |  Stock: $_maxStock',
+              style: TextStyle(color: Colors.grey[600]),
+            ),
+            const SizedBox(height: 16),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              decoration: BoxDecoration(
+                color: Colors.grey[100],
+                borderRadius: BorderRadius.circular(30),
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  IconButton(
+                    icon: const Icon(Icons.remove_circle_outline),
+                    onPressed: _quantity > 1
+                        ? () => setState(() => _quantity--)
+                        : null,
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                    child: Text(
+                      '$_quantity',
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    icon: const Icon(Icons.add_circle_outline),
+                    onPressed: _quantity < _maxStock
+                        ? () => setState(() => _quantity++)
+                        : null,
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 16),
+            Text(
+              widget.isKhmer
+                  ? 'សរុប: \$${totalPrice.toStringAsFixed(2)}'
+                  : 'Total: \$${totalPrice.toStringAsFixed(2)}',
+              style: const TextStyle(
+                fontSize: 24,
+                fontWeight: FontWeight.bold,
+                color: Colors.green,
+              ),
+            ),
+            const SizedBox(height: 24),
             Container(
               padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
               decoration: BoxDecoration(
@@ -526,21 +726,21 @@ class _BakongPaymentSheetState extends State<_BakongPaymentSheet> {
                 style: TextStyle(
                   color: Colors.white,
                   fontWeight: FontWeight.bold,
-                  fontSize: 24,
+                  fontSize: 20,
                 ),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 16),
             Container(
-              width: 220,
-              height: 220,
+              width: 180,
+              height: 180,
               decoration: BoxDecoration(
                 border: Border.all(color: Colors.red.shade100, width: 3),
                 borderRadius: BorderRadius.circular(16),
               ),
               child: const Icon(
                 Icons.qr_code_2,
-                size: 200,
+                size: 160,
                 color: Colors.black87,
               ),
             ),
@@ -551,7 +751,9 @@ class _BakongPaymentSheetState extends State<_BakongPaymentSheet> {
                 onPressed: _simulateScan,
                 icon: const Icon(Icons.document_scanner),
                 label: Text(
-                  widget.isKhmer ? 'ក្លែងធ្វើការស្កេន' : 'Simulate Bakong Scan',
+                  widget.isKhmer
+                      ? 'ក្លែងធ្វើការស្កេនបង់ប្រាក់'
+                      : 'Simulate Bakong Scan',
                 ),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFFE53935),
