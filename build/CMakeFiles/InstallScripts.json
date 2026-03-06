@@ -1,0 +1,12 @@
+{
+	"InstallScripts" : 
+	[
+		"C:/Users/sreyk/zando_inventory_backend/build/cmake_install.cmake",
+		"C:/Users/sreyk/zando_inventory_backend/build/flutter/cmake_install.cmake",
+		"C:/Users/sreyk/zando_inventory_backend/build/runner/cmake_install.cmake",
+		"C:/Users/sreyk/zando_inventory_backend/build/plugins/file_selector_windows/cmake_install.cmake",
+		"C:/Users/sreyk/zando_inventory_backend/build/plugins/permission_handler_windows/cmake_install.cmake",
+		"C:/Users/sreyk/zando_inventory_backend/build/plugins/webview_windows/cmake_install.cmake"
+	],
+	"Parallel" : false
+}

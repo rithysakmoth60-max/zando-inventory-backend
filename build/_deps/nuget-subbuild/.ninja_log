@@ -1,0 +1,24 @@
+# ninja log v6
+29244	32295	7943772367776529	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-subbuild/nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-configure	e9bd0b1b98b7ab17
+19	4351	7943772089089984	nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-mkdir	a6912deec08f9f52
+32296	34687	7943772395430092	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-subbuild/nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-build	9a6826fa163eb582
+16269	18315	7943772230420208	nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-update	b7e3af660566b178
+19	4351	7943772089089984	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-subbuild/nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-mkdir	a6912deec08f9f52
+18316	21684	7943772255520914	nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-patch	2ec3b01192cb666c
+4359	16268	7943772213133706	nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-download	bdcf93461cdd6c3d
+4359	16268	7943772213133706	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-subbuild/nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-download	bdcf93461cdd6c3d
+16269	18315	7943772230420208	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-subbuild/nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-update	b7e3af660566b178
+18316	21684	7943772255520914	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-subbuild/nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-patch	2ec3b01192cb666c
+21684	29243	7943772341278508	nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-copyfile	3ce734d6269fac5f
+21684	29243	7943772341278508	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-src/nuget.exe	3ce734d6269fac5f
+21684	29243	7943772341278508	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-subbuild/nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-copyfile	3ce734d6269fac5f
+29244	32295	7943772367776529	nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-configure	e9bd0b1b98b7ab17
+32296	34687	7943772395430092	nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-build	9a6826fa163eb582
+34688	38018	7943772423621472	nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-install	2900c80d760b3568
+34688	38018	7943772423621472	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-subbuild/nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-install	2900c80d760b3568
+38019	40517	7943772450121748	nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-test	185c9b169ce7729a
+38019	40517	7943772450121748	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-subbuild/nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-test	185c9b169ce7729a
+40518	42733	7943772474317531	CMakeFiles/nuget-populate-complete	5e675a88c5f8b5f0
+40518	42733	7943772474317531	nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-done	5e675a88c5f8b5f0
+40518	42733	7943772474317531	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-subbuild/CMakeFiles/nuget-populate-complete	5e675a88c5f8b5f0
+40518	42733	7943772474317531	C:/Users/sreyk/zando_inventory_backend/build/_deps/nuget-subbuild/nuget-populate-prefix/src/nuget-populate-stamp/nuget-populate-done	5e675a88c5f8b5f0
