@@ -54,3 +54,13 @@ class User(Base):
     username = Column(String, unique=True, index=True)
     password = Column(String)  # Note: Plain text for demo simplicity!
     role = Column(String)      # 'admin', 'sale', or 'customer'
+
+# 7. Customer Orders (NEW - For the Orders Tab in Flutter)
+class Order(Base):
+    __tablename__ = "orders"
+    id = Column(Integer, primary_key=True, index=True)
+    customer_username = Column(String, index=True)
+    sku_code = Column(String)
+    product_name = Column(String)
+    quantity = Column(Integer, default=1)
+    order_date = Column(DateTime, default=datetime.utcnow)
